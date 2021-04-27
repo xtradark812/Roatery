@@ -6,7 +6,6 @@ def comsInit():
     while True:
         client, client_address = SERVER.accept() 
         print("%s:%s has connected." % client_address)
-        client.send(bytes("Please enter your username:", "utf8"))
         username = client.recv(BUFSIZ).decode("utf8")
         #here add database lookup
         client.send(bytes("Please enter your password:", "utf8"))
@@ -28,7 +27,10 @@ class User():
     def pcInit(self,command) #start a private chat with another user specified in the command
         user2name = self.command.lstrip("startchat") #removes the command startchat to isolate the username
 
+
         #check if user is in database and is online
+        
+
 
 
 

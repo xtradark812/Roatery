@@ -3,14 +3,79 @@ from threading import Thread
 import tkinter
 
 
-def receive():
-    """Handles receiving of messages."""
-    while True:
-        try:
-            msg = client_socket.recv(BUFSIZ).decode("utf8")
-            msg_list.insert(tkinter.END, msg)
-        except OSError:  # Possibly client has left the chat.
-            break
+
+class UserLogin():
+    def __init__(self):
+        while loggedIn != True:
+            self.username = self.getUsername()
+            self.password = self.getPassword()
+        
+        #add verification?
+
+    def getUsername(self):
+        self.usr = input("Username:") #asks for username
+        return self.usr
+    
+    def getPassword(self):
+        self.psw = input("Password:") #asks for password
+        return self.psw
+        #possibly add hashing for password?
+
+    def login(self): #when called, attempts to login, and if sucsessful, returns true and sets logged in = true.
+        self.data = []
+        self.data.append("loginRequest")
+        self.data.append(self.username)
+        self.data.append(self.password)
+        self.data_serialized = json.dumps(self.data) #serialize data 
+        client_socket.send(bytes(self.data_serialized, "utf8")) ### SENDS LOGIN DATA TO SERVER [loginRequest,username,password]
+        self.response = client_socket.recv(BUFSIZ).decode("utf8") ### WAITS FOR SAME DATA TO BE RETURNED
+        if self.response == self.data:
+            loggedIn = True
+            return True
+        else:
+            return False
+
+
+
+class Main():
+    def __init__(self):
+        self.HOST = input('Enter host: ')
+        self.PORT = input('Enter port: ')
+        if not self.PORT:
+            self.PORT = 33000
+        else:
+            self.PORT = int(PORT)
+
+        self.BUFSIZ = 1024
+        self.ADDR = (self.HOST, self.PORT)
+
+        self.client_socket = socket(AF_INET, SOCK_STREAM)
+        self.client_socket.connect(ADDR)
+        self.login = UserLogin()
+        if self.login.login() == True: #attempts to log in to server
+            self.receive_thread = Thread(target=self.receive)
+            self.receive_thread.start()
+
+    def receive():
+        while True:
+            try:
+                msg = client_socket.recv(BUFSIZ).decode("utf8")
+            except OSError:  # Possibly client has left the chat.
+                break
+
+    
+
+
+        
+
+
+
+
+
+
+#------------------------------- THE STUFF BELOW THI LINE IS JUST FOR REFRENCE, NOT FOR THE ACTUAL CODE
+
+
 
 
 def send(event=None):  # event is passed by binders.
@@ -22,48 +87,4 @@ def send(event=None):  # event is passed by binders.
         client_socket.close()
         top.quit()
 
-
-def on_closing(event=None):
-    """This function is to be called when the window is closed."""
-    my_msg.set("{quit}")
-    send()
-
-top = tkinter.Tk()
-top.title("Chatter")
-
-messages_frame = tkinter.Frame(top)
-my_msg = tkinter.StringVar()  # For the messages to be sent.
-my_msg.set("Type your messages here.")
-scrollbar = tkinter.Scrollbar(messages_frame)  # To navigate through past messages.
-# Following will contain the messages.
-msg_list = tkinter.Listbox(messages_frame, height=15, width=50, yscrollcommand=scrollbar.set)
-scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
-msg_list.pack(side=tkinter.LEFT, fill=tkinter.BOTH)
-msg_list.pack()
-messages_frame.pack()
-
-entry_field = tkinter.Entry(top, textvariable=my_msg)
-entry_field.bind("<Return>", send)
-entry_field.pack()
-send_button = tkinter.Button(top, text="Send", command=send)
-send_button.pack()
-
-top.protocol("WM_DELETE_WINDOW", on_closing)
-
-#----Now comes the sockets part----
-HOST = input('Enter host: ')
-PORT = input('Enter port: ')
-if not PORT:
-    PORT = 33000
-else:
-    PORT = int(PORT)
-
-BUFSIZ = 1024
-ADDR = (HOST, PORT)
-
-client_socket = socket(AF_INET, SOCK_STREAM)
-client_socket.connect(ADDR)
-
-receive_thread = Thread(target=receive)
-receive_thread.start()
-tkinter.mainloop()  # Starts GUI execution.
+#-------------
