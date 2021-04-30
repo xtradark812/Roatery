@@ -5,12 +5,16 @@ import json
 
 class Main():
     def __init__(self):
-        login = UserLogin()
-        while login.login != True:
-            login.login
-
-
+        self.login = UserLogin()
+        while self.login.login != True:
+            print(self.login.login)
+        
     def sendMessage(self,message):
+        self.message = message
+        #add encryption for message here
+        client_socket.send(bytes(self.message, "utf8"))
+        if self.message == "{quit}":
+            pass # add quit function
         pass
 
 
@@ -48,6 +52,8 @@ class UserLogin():
             return False
 
 
+#INIT CONNECTION (function?)
+
 HOST = input('Enter host: ')
 PORT = input('Enter port: ')
 if not PORT:
@@ -69,23 +75,3 @@ receive_thread.start()
 
         
 
-
-
-
-
-
-#------------------------------- THE STUFF BELOW THI LINE IS JUST FOR REFRENCE, NOT FOR THE ACTUAL CODE
-
-
-
-
-def send(event=None):  # event is passed by binders.
-    """Handles sending of messages."""
-    msg = my_msg.get()
-    my_msg.set("")  # Clears input field.
-    client_socket.send(bytes(msg, "utf8"))
-    if msg == "{quit}":
-        client_socket.close()
-        top.quit()
-
-#-------------
