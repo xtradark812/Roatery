@@ -1,11 +1,23 @@
 from socket import AF_INET, socket, SOCK_STREAM
 from threading import Thread
 import tkinter
+import json
+
+class Main():
+    def __init__(self):
+        login = UserLogin()
+        while login.login != True:
+            login.login
+
+
+    def sendMessage(self,message):
+        pass
 
 
 
 class UserLogin():
     def __init__(self):
+        loggedIn = False
         while loggedIn != True:
             self.username = self.getUsername()
             self.password = self.getPassword()
@@ -30,38 +42,27 @@ class UserLogin():
         client_socket.send(bytes(self.data_serialized, "utf8")) ### SENDS LOGIN DATA TO SERVER [loginRequest,username,password]
         self.response = client_socket.recv(BUFSIZ).decode("utf8") ### WAITS FOR SAME DATA TO BE RETURNED
         if self.response == self.data:
-            loggedIn = True
+            self.loggedIn = True
             return True
         else:
             return False
 
 
+HOST = input('Enter host: ')
+PORT = input('Enter port: ')
+if not PORT:
+    PORT = 33000
+else:
+    PORT = int(PORT)
 
-class Main():
-    def __init__(self):
-        self.HOST = input('Enter host: ')
-        self.PORT = input('Enter port: ')
-        if not self.PORT:
-            self.PORT = 33000
-        else:
-            self.PORT = int(PORT)
+BUFSIZ = 1024
+ADDR = (HOST, PORT)
 
-        self.BUFSIZ = 1024
-        self.ADDR = (self.HOST, self.PORT)
+client_socket = socket(AF_INET, SOCK_STREAM)
+client_socket.connect(ADDR)
 
-        self.client_socket = socket(AF_INET, SOCK_STREAM)
-        self.client_socket.connect(ADDR)
-        self.login = UserLogin()
-        if self.login.login() == True: #attempts to log in to server
-            self.receive_thread = Thread(target=self.receive)
-            self.receive_thread.start()
-
-    def receive():
-        while True:
-            try:
-                msg = client_socket.recv(BUFSIZ).decode("utf8")
-            except OSError:  # Possibly client has left the chat.
-                break
+receive_thread = Thread(target=Main)
+receive_thread.start()
 
     
 
