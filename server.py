@@ -13,6 +13,7 @@ def comsInit():
         #here add a database lookup
 
         #if username and password both match, connect the user and set their status as online
+        clients.update({username:True})
         Thread(target=User, args=(client,)).start()
 
 
@@ -31,7 +32,7 @@ class User():
         #check if user is in database and is online
         
 
-
+#add disconnect function to set dictionary key to offline
 
 
 
@@ -43,7 +44,7 @@ def broadcast(msg, prefix=""):  # prefix is for name identification.
         sock.send(bytes(prefix, "utf8")+msg)
 
         
-clients = {}
+clients = {} # {username:isOnline}
 addresses = {}
 
 HOST = ''
