@@ -1,14 +1,30 @@
 from socket import AF_INET, socket, SOCK_STREAM
 from threading import Thread
-import tkinter
-import json
+import time
+
 
 class Main():
     def __init__(self):
+        self.handshakeVar = False 
+        while self.handshakeVar != True:
+            print("Waiting for connection to be cofirmed...")
+            self.handshakeVar = self.handshake()
+            time.sleep(10)
+        if self.handshakeVar == True:
+            print("Connection sucsessful.")
+
         self.login = UserLogin()
-        while self.login.login != True:
-            print(self.login.login)
+        if self.login.loggedIn == True:
+            print("login sucsessful")
+    
+    def handshake(self):
+        self.data = "alpha 1.0"
+        client_socket.send(bytes(self.data, "utf8")) ### SENDS DATA TO SERVER "handshake"
+        self.response = client_socket.recv(BUFSIZ).decode("utf8") ### WAITS FOR SAME DATA TO BE RETURNED
+        if self.response == self.data:
+            return True
         
+
     def sendMessage(self,message):
         self.message = message
         #add encryption for message here
@@ -25,6 +41,7 @@ class UserLogin():
         while loggedIn != True:
             self.username = self.getUsername()
             self.password = self.getPassword()
+            self.login()
         
         #add verification?
 
@@ -42,8 +59,7 @@ class UserLogin():
         self.data.append("loginRequest")
         self.data.append(self.username)
         self.data.append(self.password)
-        self.data_serialized = json.dumps(self.data) #serialize data 
-        client_socket.send(bytes(self.data_serialized, "utf8")) ### SENDS LOGIN DATA TO SERVER [loginRequest,username,password]
+        client_socket.send(bytes(self.data, "utf8")) ### SENDS LOGIN DATA TO SERVER [loginRequest,username,password]
         self.response = client_socket.recv(BUFSIZ).decode("utf8") ### WAITS FOR SAME DATA TO BE RETURNED
         if self.response == self.data:
             self.loggedIn = True
@@ -67,8 +83,10 @@ ADDR = (HOST, PORT)
 client_socket = socket(AF_INET, SOCK_STREAM)
 client_socket.connect(ADDR)
 
-receive_thread = Thread(target=Main)
-receive_thread.start()
+connection = Main()
+
+# receive_thread = Thread(target=Main)
+# receive_thread.start()
 
     
 

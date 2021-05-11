@@ -1,53 +1,51 @@
 from socket import AF_INET, socket, SOCK_STREAM
 from threading import Thread
 
+def login(data):
+    if data[0] != "loginRequest":
+        print("ALERT! Login request invalid")
+        return False
+    username = data[1]
+    password = data[2]
+    #check with database, and if correct then return true
+    return True
+
+
 
 def comsInit():
     while True:
         client, client_address = SERVER.accept() 
         print("%s:%s has connected." % client_address)
-        username = client.recv(BUFSIZ).decode("utf8")
-        #here add database lookup
-        client.send(bytes("Please enter your password:", "utf8"))
-        password = client.recv(BUFSIZ).decode("utf8")
-        #here add a database lookup
-
-        #if username and password both match, connect the user and set their status as online
-        clients.update({username:True})
-        Thread(target=User, args=(client,)).start()
-
-
-class User():
-    def __init__(self,client):
-        self.client = client
-        self.command = self.client.recv(BUFSIZ).decode("utf8")
-        #waits for commands from client
-        if self.command.startswith("startchat") == True: #command to start a private chat
-            pcInit(self.command)
-
-    def pcInit(self,command) #start a private chat with another user specified in the command
-        user2name = self.command.lstrip("startchat") #removes the command startchat to isolate the username
-
-
-        #check if user is in database and is online
+        #first wait for handshake
+        handshake = client.recv(BUFSIZ).decode("utf8")
+        if handshake == "alpha 1.0":
+            client.send(bytes(handshake, "utf8"))
+            print(client, "handshake confirmed")
         
+        loginData = client.recv(BUFSIZ).decode("utf8")
 
-#add disconnect function to set dictionary key to offline
+        loggedIn = False
+        while loggedIn == False:
+            loggedIn = login(loginData)
+
+        #if username and password both match, connect the user
+        clients.update({loginData[1]:client})
+        
+        #set status as online?
 
 
 
+# def broadcast(msg, prefix=""):  # prefix is for name identification.
+#     """Broadcasts a message to all the clients."""
 
-def broadcast(msg, prefix=""):  # prefix is for name identification.
-    """Broadcasts a message to all the clients."""
-
-    for sock in clients:
-        sock.send(bytes(prefix, "utf8")+msg)
+#     for sock in clients:
+#         sock.send(bytes(prefix, "utf8")+msg)
 
         
-clients = {} # {username:isOnline}
+clients = {} # {username:client}
 addresses = {}
 
-HOST = ''
+HOST = '127.0.0.1'
 PORT = 33000
 BUFSIZ = 1024
 ADDR = (HOST, PORT)
