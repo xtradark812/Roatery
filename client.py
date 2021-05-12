@@ -3,6 +3,7 @@ from threading import Thread
 import time
 import json
 import inspect
+import re
 
 class ObjectEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -25,20 +26,55 @@ class ObjectEncoder(json.JSONEncoder):
             return self.default(d)
         return obj
 
+
 class Main():
     def __init__(self,cs,bf):
         self.client_socket = cs
         self.BUFSIZ = bf
+        self.commandLine()
+    
+    def commandLine(self):
+        self.quitapp = False
+        while not self.quitapp:
+            self.usersOnline()
+            self.command = input(">")
+
+            if self.command.startswith("send") == True:
+                self.recipientMessage = self.command.replace('send', '')
+                self.recipient = self.recipientMessage.split()[0]
+                self.message = self.recipientMessage.replace(self.recipient,'',1).lstrip()
+                self.serialized = json.dumps(newMessage(self.recipient,self.message), cls=ObjectEncoder, indent=2, sort_keys=True)
+                self.client_socket.sendall(bytes(self.serialized, "utf8")) ### SENDS MESSAGE TO SERVER
+                self.response = self.client_socket.recv(self.BUFSIZ).decode("utf8") ### WAITS FOR SAME DATA TO BE RETURNED
+                if self.response == self.serialized:
+                    print("Message sent sucsessfully")
 
 
-    def sendMessage(self,message):
+            elif self.command == "help":
+                print("Commands:")
+                print("send [username] [message] - send a secure message to [username]")
+                print("quit - ends the session")
+
+            elif self.command == "quit":
+                self.quitapp = True
+
+
+    def usersOnline(self):
+        pass # will request a list of online friends from the server and print it.
+
+            
+class newMessage():
+    def __init__(self,recipient,message):
+        self.identifier = "directMessage"
+        self.recipient = recipient
         self.message = message
-        #add encryption for message here
-        self.client_socket.send(bytes(self.message, "utf8"))
+    
+    
 
 
 
-class UserLogin(): #userlogin object to send to server
+
+class LoginRequest(): #LoginRequest object to send to server
     def __init__(self):
         self.requestID = "loginRequest"
         self.username = self.getUsername()
@@ -53,8 +89,10 @@ class UserLogin(): #userlogin object to send to server
         return self.psw
         #possibly add hashing for password?
 
+
+
 def login(client_socket,BUFSIZ): #when called, attempts to login, and if sucsessful, returns true and sets logged in = true.
-    serialized = json.dumps(UserLogin(), cls=ObjectEncoder, indent=2, sort_keys=True) #serialize data
+    serialized = json.dumps(LoginRequest(), cls=ObjectEncoder, indent=2, sort_keys=True) #serialize data
     client_socket.sendall(bytes(serialized, "utf8")) ### SENDS LOGIN DATA TO SERVER [loginRequest,username,password]
     response = client_socket.recv(BUFSIZ).decode("utf8") ### WAITS FOR SAME DATA TO BE RETURNED
     if response == serialized:

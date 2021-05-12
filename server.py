@@ -7,19 +7,27 @@ class Client():
         self.username = uName
         self.client = client
         self.BUFSIZ = BUFSIZ
-        while True:
-            self.recieveMsg()
+        self.connected = True
+        self.THREAD = Thread(target=self.recieveMsg())
+        self.THREAD.start()
 
     def recieveMsg(self):
-        self.Rmessage = self.client.recv(self.BUFSIZ).decode("utf8")
-        self.readMessage(self.Rmessage)
+        while self.connected:
+            self.Rmessage = self.client.recv(self.BUFSIZ).decode("utf8")
+            self.readMessage(self.Rmessage)
+
 
     def sendMsg(self,Smessage):
         self.client.send(bytes(Smessage, "utf8"))
     
     def readMessage(self,RRmessage):
-        
-        pass
+        self.RRmessage = RRmessage
+        self.deserialised = json.loads(self.RRmessage)
+        if self.deserialised["identifier"] == "directMessage":
+            print("directMessage object recieved from",self.username)
+            print("Message:",self.deserialised["message"])
+            print("Recipient:",self.deserialised["recipient"])
+        self.sendMsg(self.RRmessage)
     
 
         
@@ -29,7 +37,7 @@ def login(data):
         print("ALERT! Login request invalid")
         return False
     username = data["username"]
-    password = data["password"]
+    #password = data["password"]
     #check with database, and if correct then return true
     return username
 
