@@ -1,3 +1,4 @@
+import json
 from socket import AF_INET, socket, SOCK_STREAM
 from threading import Thread
 
@@ -20,16 +21,19 @@ def comsInit():
         handshake = client.recv(BUFSIZ).decode("utf8")
         if handshake == "alpha 1.0":
             client.send(bytes(handshake, "utf8"))
-            print(client, "handshake confirmed")
+            print(client, "connected sucsessfully")
         
         loginData = client.recv(BUFSIZ).decode("utf8")
-
+        deserialized = json.loads(loginData)
         loggedIn = False
         while loggedIn == False:
-            loggedIn = login(loginData)
+            loggedIn = login(deserialized)
+        if loggedIn == True:
+            print("Confirmed login:",deserialized)
+            client.send(bytes(loginData, "utf8"))
 
         #if username and password both match, connect the user
-        clients.update({loginData[1]:client})
+        clients.update({deserialized[1]:client})
         
         #set status as online?
 
