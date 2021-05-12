@@ -18,6 +18,7 @@ class Client():
         self.client.send(bytes(Smessage, "utf8"))
     
     def readMessage(self,RRmessage):
+        
         pass
     
 
