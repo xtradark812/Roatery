@@ -3,10 +3,25 @@ from socket import AF_INET, socket, SOCK_STREAM
 from threading import Thread
 
 class Client():
-    def __init__(self,uName,client):
+    def __init__(self,uName,client,BUFSIZ):
         self.username = uName
         self.client = client
+        self.BUFSIZ = BUFSIZ
+        while True:
+            self.recieveMsg()
 
+    def recieveMsg(self):
+        self.Rmessage = self.client.recv(self.BUFSIZ).decode("utf8")
+        self.readMessage(self.Rmessage)
+
+    def sendMsg(self,Smessage):
+        self.client.send(bytes(Smessage, "utf8"))
+    
+    def readMessage(self,RRmessage):
+        pass
+    
+
+        
 
 def login(data):
     if data["requestID"] != "loginRequest":
@@ -41,7 +56,7 @@ def comsInit():
             client.send(bytes(loginData, "utf8"))
 
         #if username and password both match, create a client object
-        clientObj = Client(loggedIn,client)
+        clientObj = Client(loggedIn,client,BUFSIZ)
         #then add client object to the dictionary
         clients.update({loggedIn:clientObj})
         
