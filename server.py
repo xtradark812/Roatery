@@ -24,9 +24,7 @@ class Client():
         self.RRmessage = RRmessage
         self.deserialised = json.loads(self.RRmessage)
         if self.deserialised["identifier"] == "directMessage":
-            print("directMessage object recieved from",self.username)
-            print("Message:",self.deserialised["message"])
-            print("Recipient:",self.deserialised["recipient"])
+            print("directMessage recieved from",self.username,"message:",self.deserialised["message"],"for recipient:",self.deserialised["recipient"])
         self.sendMsg(self.RRmessage)
     
 
