@@ -2,14 +2,20 @@ import json
 from socket import AF_INET, socket, SOCK_STREAM
 from threading import Thread
 
+class Client():
+    def __init__(self,uName,client):
+        self.username = uName
+        self.client = client
+
+
 def login(data):
-    if data[0] != "loginRequest":
+    if data["requestID"] != "loginRequest":
         print("ALERT! Login request invalid")
         return False
-    username = data[1]
-    password = data[2]
+    username = data["username"]
+    password = data["password"]
     #check with database, and if correct then return true
-    return True
+    return username
 
 
 
@@ -17,23 +23,27 @@ def comsInit():
     while True:
         client, client_address = SERVER.accept() 
         print("%s:%s has connected." % client_address)
+
         #first wait for handshake
         handshake = client.recv(BUFSIZ).decode("utf8")
         if handshake == "alpha 1.0":
             client.send(bytes(handshake, "utf8"))
-            print(client, "connected sucsessfully")
+            print(client_address, "connection confirmed")
         
+        #Then wait for login
         loginData = client.recv(BUFSIZ).decode("utf8")
         deserialized = json.loads(loginData)
         loggedIn = False
         while loggedIn == False:
             loggedIn = login(deserialized)
-        if loggedIn == True:
-            print("Confirmed login:",deserialized)
+        if loggedIn != False:
+            print("Confirmed login:",loggedIn,"at",client_address)
             client.send(bytes(loginData, "utf8"))
 
-        #if username and password both match, connect the user
-        clients.update({deserialized[1]:client})
+        #if username and password both match, create a client object
+        clientObj = Client(loggedIn,client)
+        #then add client object to the dictionary
+        clients.update({loggedIn:clientObj})
         
         #set status as online?
 
@@ -46,7 +56,7 @@ def comsInit():
 #         sock.send(bytes(prefix, "utf8")+msg)
 
         
-clients = {} # {username:client}
+clients = {} # {username:clientObj}
 addresses = {}
 
 HOST = '127.0.0.1'
