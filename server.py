@@ -24,9 +24,17 @@ class Client():
         self.RRmessage = RRmessage
         self.deserialised = json.loads(self.RRmessage)
         if self.deserialised["identifier"] == "directMessage":
-            print("directMessage recieved from",self.username,"message:",self.deserialised["message"],"for recipient:",self.deserialised["recipient"])
+            self.directMessage(self.deserialised["message"],self.deserialised["recipient"])
         self.sendMsg(self.RRmessage)
-    
+    def directMessage(self,DMmessage,DMrecipient):
+        self.DMmessage = DMmessage
+        self.DMrecipient = DMrecipient
+        try:
+            clients[self.DMrecipient].sendall(bytes(self.DMmessage, "utf8"))
+            #wait for same message to be sent back
+        except:
+            return False
+
 
         
 
@@ -50,7 +58,7 @@ def comsInit():
         handshake = client.recv(BUFSIZ).decode("utf8")
         if handshake == "alpha 1.0":
             client.send(bytes(handshake, "utf8"))
-            print(client_address, "connection confirmed")
+            print("%s:%s connection confirmed." % client_address)
         
         #Then wait for login
         loginData = client.recv(BUFSIZ).decode("utf8")
@@ -59,7 +67,7 @@ def comsInit():
         while loggedIn == False:
             loggedIn = login(deserialized)
         if loggedIn != False:
-            print("Confirmed login:",loggedIn,"at",client_address)
+            print("confirmed login:",loggedIn,"at","%s:%s" % client_address)
             client.send(bytes(loginData, "utf8"))
 
         #if username and password both match, create a client object

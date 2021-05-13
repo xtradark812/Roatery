@@ -31,10 +31,17 @@ class Main():
     def __init__(self,cs,bf):
         self.client_socket = cs
         self.BUFSIZ = bf
+        self.quitapp = False
+        self.THREAD = Thread(target=self.recieveMsg())
         self.commandLine()
+
+    def recieveMsg(self):
+        while not self.quitapp:
+            self.Rmessage = self.client_socket.recv(self.BUFSIZ).decode("utf8") 
+            #needs to read the message and print it
+            
     
     def commandLine(self):
-        self.quitapp = False
         while not self.quitapp:
             self.usersOnline()
             self.command = input(">")
