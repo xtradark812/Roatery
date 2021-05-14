@@ -11,26 +11,28 @@ class Client():
         self.client = client
         self.BUFSIZ = BUFSIZ
         self.connected = True
-        self.THREAD = Thread(target=self.recieveMsg())
-        self.THREAD.start()
-        print("test1")
+
 
     def recieveMsg(self):
         while self.connected:
             self.Rmessage = self.client.recv(self.BUFSIZ).decode("utf8")
             self.read = False
             self.read = self.readMessage(self.Rmessage)
-            if self.read == True:
-                self.sendMsg(self.Rmessage)
-            elif self.read == False:
+            if self.read == False:
                 print("error, message failed to read/send")
                 self.sendMsg("error")#send an error object
+                
+               
 
 
 
     def sendMsg(self,Smessage):
         self.client.send(bytes(Smessage, "utf8"))
-
+        self.confirmation = self.client.recv(self.BUFSIZ).decode("utf8")
+        if self.readMessage(self.confirmation) == "recived":
+            print("message sent!")
+        else:
+            print("message failed to send!")
 
     def readMessage(self,Recvmessage):
         self.RRmessage = Recvmessage
@@ -40,19 +42,24 @@ class Client():
             if DM == False:
                 return False
             return True
+        elif self.deserialisedRR["identifier"] == "recivedMessage":
+            return "recived"
+            pass #message was recived
+
         else:
             return False
-        
+    
+    def run(self):
+        self.THREAD = Thread(target=self.recieveMsg())
+        self.THREAD.start()
 
     
     def directMessage(self,DMmessage,DMrecipient):
         self.DMmessage = DMmessage
         self.DMrecipient = DMrecipient
         try:
-            if self.DMrecipient == self.username:
-                print("Message sent sucsessfully to",self.username)
-            else:
-                clients[self.DMrecipient].sendMsg(self.DMmessage)
+            clients[self.DMrecipient].sendMsg(self.DMmessage)
+            self.sendMsg("sent")
             return True
         except KeyError: #THIS MEANS USER IS NOT IN USERS DICT
             return False
@@ -64,6 +71,9 @@ def login(data):
         print("ALERT! Login request invalid")
         return False
     username = data["username"]
+    password = data["password"]
+    if username in clients.keys():
+        return False
     #password = data["password"]
     #check with database, and if correct then return true
     return username
@@ -94,6 +104,7 @@ def comsInit(client,client_address):
         clientObj = Client(loggedIn,client,BUFSIZ)
         #then add client object to the dictionary
         clients.update({loggedIn:clientObj})
+        clientObj.run()
         
         #set status as online?
 

@@ -4,6 +4,7 @@ import time
 import json
 import inspect
 import re
+from datetime import datetime
 
 class ObjectEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -33,11 +34,11 @@ class Main():
         self.BUFSIZ = bf
         self.username = usr
         self.printmsg = ""
-        self.THREAD2 = Thread(target=self.commandLine())
-        self.THREAD1 = Thread(target=self.recieveMsg())
+        self.THREAD2 = Thread(target=self.commandLine)
+        self.THREAD1 = Thread(target=self.recieveMsg)
         self.THREAD1.start()
         self.THREAD2.start()
-
+        self.recived = []
 
     def recieveMsg(self):
         self.quitapp = False
@@ -46,27 +47,32 @@ class Main():
             self.read = False 
             self.read = self.readMessage(self.Rmessage)
             if self.read == True:
-                self.client_socket.sendall(bytes(self.Rmessage, "utf8")) #sends back the same message to confirm that it has been recived
+                self.serialized = json.dumps(recivedMessage(self.Rmessage), cls=ObjectEncoder, indent=2, sort_keys=True)
+                self.client_socket.sendall(bytes(self.serialized, "utf8")) ### SENDS MESSAGE TO SERVER
             if self.read == False:
                 print("Error! Message failed to send. Was the username correct?")
             
     def sendDM(self,message,recipient,sender):
         self.serialized = json.dumps(newMessage(recipient,message,sender), cls=ObjectEncoder, indent=2, sort_keys=True)
         self.client_socket.sendall(bytes(self.serialized, "utf8")) ### SENDS MESSAGE TO SERVER
-        self.response = self.client_socket.recv(self.BUFSIZ).decode("utf8") ### WAITS FOR SAME DATA TO BE RETURNED
-        if self.response == "error":
-            print("Error! Message failed to send. Was the username correct?")
-        if self.response == self.serialized:
-            print("Message sent sucsessfully")
+
 
     def readMessage(self,RRmessage):
+        if RRmessage == "sent":
+            print("Message sent!")
+            return None
+        
+        self.deserialised = json.loads(RRmessage)
         self.RRmessage = RRmessage
         if self.RRmessage == "error":
             return False
-        self.deserialised = json.loads(self.RRmessage)
+        
         if self.deserialised["identifier"] == "directMessage":
-            self.printmsg = self.deserialised["sender"] + ": "+self.deserialised["message"]
+            print(self.deserialised["sender"] + ": "+self.deserialised["message"])
             return True
+        if self.deserialised["identifier"] == "recivedMessage":
+            print("Message recived")
+            return None
 
     def commandLine(self):
         self.quitapp = False
@@ -80,8 +86,11 @@ class Main():
             if self.command.startswith("send") == True:
                 self.recipientMessage = self.command.replace('send', '')
                 self.recipient = self.recipientMessage.split()[0]
-                self.message = self.recipientMessage.replace(self.recipient,'',1).lstrip()
-                self.sendDM(self.message,self.recipient,self.username)
+                if self.recipient == self.username:
+                    print("you cant send a message to yourself!")
+                else:
+                    self.message = self.recipientMessage.replace(self.recipient,'',1).lstrip()
+                    self.sendDM(self.message,self.recipient,self.username)
 
 
             elif self.command == "help":
@@ -103,8 +112,14 @@ class newMessage():
         self.recipient = recipient
         self.message = message
         self.sender = sender
-    
-    
+        self.opened = "False"
+        
+class recivedMessage():
+    def __init__(self,message):
+        self.identifier = "recivedMessage"   
+        self.message = message
+
+
 
 
 
