@@ -28,11 +28,6 @@ class Client():
 
     def sendMsg(self,Smessage):
         self.client.send(bytes(Smessage, "utf8"))
-        self.confirmation = self.client.recv(self.BUFSIZ).decode("utf8")
-        if self.readMessage(self.confirmation) == "recived":
-            print("message sent!")
-        else:
-            print("message failed to send!")
 
     def readMessage(self,Recvmessage):
         self.RRmessage = Recvmessage
@@ -42,10 +37,6 @@ class Client():
             if DM == False:
                 return False
             return True
-        elif self.deserialisedRR["identifier"] == "recivedMessage":
-            return "recived"
-            pass #message was recived
-
         else:
             return False
     
@@ -59,7 +50,6 @@ class Client():
         self.DMrecipient = DMrecipient
         try:
             clients[self.DMrecipient].sendMsg(self.DMmessage)
-            self.sendMsg("sent")
             return True
         except KeyError: #THIS MEANS USER IS NOT IN USERS DICT
             return False

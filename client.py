@@ -46,9 +46,6 @@ class Main():
             self.Rmessage = self.client_socket.recv(self.BUFSIZ).decode("utf8")
             self.read = False 
             self.read = self.readMessage(self.Rmessage)
-            if self.read == True:
-                self.serialized = json.dumps(recivedMessage(self.Rmessage), cls=ObjectEncoder, indent=2, sort_keys=True)
-                self.client_socket.sendall(bytes(self.serialized, "utf8")) ### SENDS MESSAGE TO SERVER
             if self.read == False:
                 print("Error! Message failed to send. Was the username correct?")
             
@@ -58,10 +55,6 @@ class Main():
 
 
     def readMessage(self,RRmessage):
-        if RRmessage == "sent":
-            print("Message sent!")
-            return None
-        
         self.deserialised = json.loads(RRmessage)
         self.RRmessage = RRmessage
         if self.RRmessage == "error":
@@ -70,9 +63,6 @@ class Main():
         if self.deserialised["identifier"] == "directMessage":
             print(self.deserialised["sender"] + ": "+self.deserialised["message"])
             return True
-        if self.deserialised["identifier"] == "recivedMessage":
-            print("Message recived")
-            return None
 
     def commandLine(self):
         self.quitapp = False
@@ -114,11 +104,6 @@ class newMessage():
         self.sender = sender
         self.opened = "False"
         
-class recivedMessage():
-    def __init__(self,message):
-        self.identifier = "recivedMessage"   
-        self.message = message
-
 
 
 
