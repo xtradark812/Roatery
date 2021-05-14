@@ -1,6 +1,9 @@
 import json
 from socket import AF_INET, socket, SOCK_STREAM
 from threading import Thread
+import threading
+
+
 
 class Client():
     def __init__(self,uName,client,BUFSIZ):
@@ -10,34 +13,52 @@ class Client():
         self.connected = True
         self.THREAD = Thread(target=self.recieveMsg())
         self.THREAD.start()
+        print("test1")
 
     def recieveMsg(self):
         while self.connected:
             self.Rmessage = self.client.recv(self.BUFSIZ).decode("utf8")
-            self.readMessage(self.Rmessage)
+            self.read = False
+            self.read = self.readMessage(self.Rmessage)
+            if self.read == True:
+                self.sendMsg(self.Rmessage)
+            elif self.read == False:
+                print("error, message failed to read/send")
+                self.sendMsg("error")#send an error object
+
 
 
     def sendMsg(self,Smessage):
         self.client.send(bytes(Smessage, "utf8"))
+
+
+    def readMessage(self,Recvmessage):
+        self.RRmessage = Recvmessage
+        self.deserialisedRR = json.loads(self.RRmessage)
+        if self.deserialisedRR["identifier"] == "directMessage":
+            DM = self.directMessage(self.RRmessage,self.deserialisedRR["recipient"])
+            if DM == False:
+                return False
+            return True
+        else:
+            return False
+        
+
     
-    def readMessage(self,RRmessage):
-        self.RRmessage = RRmessage
-        self.deserialised = json.loads(self.RRmessage)
-        if self.deserialised["identifier"] == "directMessage":
-            self.directMessage(self.deserialised["message"],self.deserialised["recipient"])
-        self.sendMsg(self.RRmessage)
     def directMessage(self,DMmessage,DMrecipient):
         self.DMmessage = DMmessage
         self.DMrecipient = DMrecipient
         try:
-            clients[self.DMrecipient].sendall(bytes(self.DMmessage, "utf8"))
-            #wait for same message to be sent back
-        except:
+            if self.DMrecipient == self.username:
+                print("Message sent sucsessfully to",self.username)
+            else:
+                clients[self.DMrecipient].sendMsg(self.DMmessage)
+            return True
+        except KeyError: #THIS MEANS USER IS NOT IN USERS DICT
             return False
 
 
         
-
 def login(data):
     if data["requestID"] != "loginRequest":
         print("ALERT! Login request invalid")
@@ -49,9 +70,8 @@ def login(data):
 
 
 
-def comsInit():
+def comsInit(client,client_address):
     while True:
-        client, client_address = SERVER.accept() 
         print("%s:%s has connected." % client_address)
 
         #first wait for handshake
@@ -78,6 +98,16 @@ def comsInit():
         #set status as online?
 
 
+def initThread():
+    while True:
+        client, client_address = SERVER.accept() 
+        clientThread = Thread(target=comsInit, args=[client,client_address])
+        clientThread.start()
+
+    
+
+
+
 
 # def broadcast(msg, prefix=""):  # prefix is for name identification.
 #     """Broadcasts a message to all the clients."""
@@ -87,7 +117,6 @@ def comsInit():
 
         
 clients = {} # {username:clientObj}
-addresses = {}
 
 HOST = '127.0.0.1'
 PORT = 33000
@@ -97,10 +126,11 @@ ADDR = (HOST, PORT)
 SERVER = socket(AF_INET, SOCK_STREAM)
 SERVER.bind(ADDR)
 
+
 if __name__ == "__main__":
     SERVER.listen(5)
     print("Waiting for connection...")
-    ACCEPT_THREAD = Thread(target=comsInit)
-    ACCEPT_THREAD.start()
-    ACCEPT_THREAD.join()
-    SERVER.close()
+    acceptThread = Thread(target=initThread)
+    acceptThread.start()
+    acceptThread.join()
+    SERVER.close
