@@ -3,7 +3,10 @@ from socket import AF_INET, socket, SOCK_STREAM
 from threading import Thread
 import threading
 
-
+try:
+    import cPickle as pickle
+except ModuleNotFoundError:
+    import pickle
 
 class Client():
     def __init__(self,uName,client,BUFSIZ):
@@ -22,9 +25,7 @@ class Client():
                 print("error, message failed to read/send")
                 self.sendMsg("error")#send an error object
                 
-               
-
-
+    
 
     def sendMsg(self,Smessage):
         self.client.send(bytes(Smessage, "utf8"))
@@ -56,22 +57,41 @@ class Client():
 
 
         
-def login(data):
-    if data["requestID"] != "loginRequest":
-        print("ALERT! Login request invalid")
+def login(client,client_address):
+    #Then wait for login
+    loginData = client.recv(BUFSIZ).decode("utf8")
+    data = json.loads(loginData)
+
+    if data["requestType"] != "loginRequest":
+        print("%s:%s invalid login request." % client_address)
         return False
-    username = data["username"]
-    password = data["password"]
-    if username in clients.keys():
-        return False
-    #password = data["password"]
-    #check with database, and if correct then return true
-    return username
+
+    else:
+        username = data["username"]
+        password = data["password"]
+        if username in clients.keys():
+            loginReq = json.dumps({"requestType":"loginRequest","loginR":False,"reason":"Already logged in"})
+            client.send(bytes(loginReq, "utf8")) #add excpetion whch logs out old user
+            return False
+        else:
+            #database lookup here!
+            #if username and pass dont mach
+                #loginReq = json.dumps({"requestType":"loginRequest","loginR":False,"reason":"Invalid username/password"})
+                #client.send(bytes(loginReq, "utf8"))
+                #return False
+            #elseif username and pass mach
+                #print("confirmed login:",loginR,"at","%s:%s" % client_address)
+                #loginReq = json.dumps({"requestType":"loginRequest","loginR":True})
+                #client.send(bytes(loginReq, "utf8"))
+                #return username
+            pass
+    
 
 
 
 def comsInit(client,client_address):
     while True:
+
         print("%s:%s has connected." % client_address)
 
         #first wait for handshake
@@ -80,24 +100,17 @@ def comsInit(client,client_address):
             client.send(bytes(handshake, "utf8"))
             print("%s:%s connection confirmed." % client_address)
         
-        #Then wait for login
-        loginData = client.recv(BUFSIZ).decode("utf8")
-        deserialized = json.loads(loginData)
+
         loggedIn = False
         while loggedIn == False:
-            loggedIn = login(deserialized)
-        if loggedIn != False:
-            print("confirmed login:",loggedIn,"at","%s:%s" % client_address)
-            client.send(bytes(loginData, "utf8"))
+            loggedIn = login(client,client_address)    
 
-        #if username and password both match, create a client object
+        #create client object
         clientObj = Client(loggedIn,client,BUFSIZ)
         #then add client object to the dictionary
         clients.update({loggedIn:clientObj})
         clientObj.run()
         
-        #set status as online?
-
 
 def initThread():
     while True:
